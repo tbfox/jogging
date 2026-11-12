@@ -59,6 +59,41 @@ The code is in `src/main/java/com/tbfox/jogging/`.
 
 The mod ships one asset, `TBFox_Jogging_Winded`, an infinite effect with `DisableSprint` that's on only while you're winded. That's why `manifest.json` has `"IncludesAssetPack": true`.
 
+## Releasing
+
+Publishing a GitHub Release sends its jar to CurseForge, through `.github/workflows/curseforge.yml`. The jar is built on your machine, not on GitHub, because the build needs your local `HytaleServer.jar`.
+
+### One-time setup
+
+1. Create the CurseForge project and upload the first file by hand, so the project exists and has an ID.
+2. Generate a CurseForge API token in the author console, under API tokens.
+3. Add these to the GitHub repo, under Settings, then Secrets and variables, then Actions:
+
+| Kind | Name | Value |
+|---|---|---|
+| Secret | `CURSEFORGE_TOKEN` | The API token. |
+| Variable | `CURSEFORGE_PROJECT_ID` | The numeric project ID from the CurseForge project page. |
+| Variable (optional) | `CURSEFORGE_GAME_VERSIONS` | Comma-separated game version names as CurseForge lists them, for example `0.7.7`. |
+
+### Each release
+
+1. Raise the version in both `build.gradle` and `src/main/resources/manifest.json`.
+2. Build, commit, and push:
+
+   ```bash
+   ./install.sh
+   ```
+
+3. Create the release with the jar attached. The release notes become the CurseForge changelog:
+
+   ```bash
+   gh release create v0.2.0 build/libs/Jogging-0.2.0.jar --title "0.2.0" --notes "What changed."
+   ```
+
+A release marked as a pre-release is uploaded to CurseForge as a beta. New files still go through CurseForge moderation before they're public.
+
+If the upload fails, fix the cause and re-run it from the Actions tab: choose "Publish to CurseForge", then "Run workflow", and enter the tag.
+
 ## Technical limitations
 
 - **No dedicated key.** Server mods can't add keybinds, so jogging is toggled with commands.

@@ -1,0 +1,75 @@
+name: Publish to CurseForge
+
+# Sends the jar attached to a GitHub Release to CurseForge.
+# Setup and usage: docs/development.md, "Releasing".
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish (for example v0.1.0)
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  CF_API: https://www.curseforge.com/api
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload release jar to CurseForge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          CF_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CF_PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          CF_GAME_VERSIONS: ${{ vars.CURSEFORGE_GAME_VERSIONS }}
+        run: |
+          set -euo pipefail
+
+          for v in CF_TOKEN CF_PROJECT_ID; do
+            if [ -z "${!v:-}" ]; then
+              echo "::error::$v is not set. See docs/development.md, Releasing."
+              exit 1
+            fi
+          done
+
+          # The jar is built locally and attached to the release.
+          gh release download "$TAG" --pattern '*.jar' --dir dist
+          shopt -s nullglob
+          jars=(dist/*.jar)
+          if [ "${#jars[@]}" -ne 1 ]; then
+            echo "::error::Release $TAG must have exactly one .jar attached, found ${#jars[@]}."
+            exit 1
+          fi
+          gh release view "$TAG" --json body,isPrerelease > release.json
+
+          # Optional: comma-separated CurseForge game version names, e.g. "0.7.7".
+          jq -n --slurpfile r release.json --arg versions "${CF_GAME_VERSIONS:-}" '
+            ($versions | split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))) as $v
+            | {
+                changelog: ($r[0].body // ""),
+                changelogType: "markdown",
+                releaseType: (if $r[0].isPrerelease then "beta" else "release" end)
+              }
+            + (if ($v | length) > 0 then {gameVersionNames: $v} else {} end)
+          ' > metadata.json
+          echo "Metadata:"; cat metadata.json
+
+          status=$(curl -sS -o response.json -w '%{http_code}' \
+            -H "X-Api-Token: $CF_TOKEN" \
+            -F "metadata=<metadata.json" \
+            -F "file=@${jars[0]}" \
+            "$CF_API/projects/$CF_PROJECT_ID/upload-file")
+          cat response.json; echo
+          if [ "$status" != "200" ]; then
+            echo "::error::CurseForge upload failed with HTTP $status."
+            exit 1
+          fi
+          echo "Uploaded $(basename "${jars[0]}") to CurseForge project $CF_PROJECT_ID."
