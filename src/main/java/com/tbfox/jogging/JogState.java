@@ -5,32 +5,27 @@ public final class JogState {
     public enum Mode { NORMAL, JOGGING, RECOVERING }
 
     private Mode mode = Mode.NORMAL;
-
-    /**
-     * Bumped every time the mode changes. A recovery timer remembers the value it started with,
-     * so a timer left over from an earlier stop can tell it's stale and do nothing.
-     */
-    private int generation;
+    private long lastBlockedMessageMs;
 
     public synchronized Mode mode() {
         return mode;
     }
 
-    public synchronized int generation() {
-        return generation;
-    }
-
     public synchronized void setMode(Mode mode) {
         this.mode = mode;
-        generation++;
     }
 
-    /** Ends recovery only if nothing has changed since the timer was started. */
-    public synchronized boolean finishRecovery(int expectedGeneration) {
-        if (mode != Mode.RECOVERING || generation != expectedGeneration) {
+    /** Actions are locked while jogging and until stamina has refilled afterwards. */
+    public synchronized boolean actionsLocked() {
+        return mode != Mode.NORMAL;
+    }
+
+    /** Rate-limits the "can't do that" message so spam-clicking doesn't flood chat. */
+    public synchronized boolean shouldSendBlockedMessage(long now, long cooldownMs) {
+        if (now - lastBlockedMessageMs < cooldownMs) {
             return false;
         }
-        setMode(Mode.NORMAL);
+        lastBlockedMessageMs = now;
         return true;
     }
 }

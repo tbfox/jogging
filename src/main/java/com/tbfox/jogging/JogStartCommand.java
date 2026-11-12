@@ -5,6 +5,9 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
+import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.entity.entities.player.movement.MovementManager;
+import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -33,8 +36,16 @@ public final class JogStartCommand extends AbstractPlayerCommand {
             return;
         }
 
-        // Starting again while recovering skips the rest of the recovery.
+        // Starting again while recovering is allowed. Actions stay locked either way,
+        // and stopping again empties the stamina bar again.
         state.setMode(JogState.Mode.JOGGING);
         player.sendMessage(Message.raw("You have started jogging."));
+
+        Player playerEntity = store.getComponent(ref, Player.getComponentType());
+        if (playerEntity != null) {
+            JogHud.show(playerEntity, player);
+        }
+        JogEffects.freezeStamina(store.getComponent(ref, EntityStatMap.getComponentType()));
+        JogEffects.applySprintSpeed(store.getComponent(ref, MovementManager.getComponentType()), player);
     }
 }
