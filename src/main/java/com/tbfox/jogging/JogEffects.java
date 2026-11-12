@@ -12,36 +12,61 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 public final class JogEffects {
     private JogEffects() {}
 
-    // ---- Speed: running moves you at sprint speed ----
+    /** How long it takes to refill the stamina bar from empty after you stop jogging. */
+    public static final float RECOVERY_SECONDS = 10f;
 
-    /** Makes normal running as fast as sprinting. Only sends an update if something changed. */
-    public static void applySprintSpeed(MovementManager movement, PlayerRef player) {
-        if (movement == null) {
-            return;
+    // ---- Speed ----
+
+    /**
+     * Run and sprint speed must never be exactly equal: the game client crashes
+     * ("value NaN is not finite") when they are, most likely by dividing by their difference.
+     * So we always keep them at least this far apart (2%).
+     */
+    private static final float SPEED_GAP = 0.02f;
+
+    /** Jogging: normal running moves you at (just under) sprint speed. */
+    public static void applyJogSpeed(MovementManager movement, PlayerRef player) {
+        MovementSettings defaults = defaults(movement);
+        if (defaults != null) {
+            float sprint = defaults.forwardSprintSpeedMultiplier;
+            setSpeed(movement, player, sprint * (1f - SPEED_GAP), sprint);
         }
+    }
+
+    /** Recovering: sprinting is barely faster than running, so sprinting does nothing useful. */
+    public static void applyRecoverySpeed(MovementManager movement, PlayerRef player) {
+        MovementSettings defaults = defaults(movement);
+        if (defaults != null) {
+            float run = defaults.forwardRunSpeedMultiplier;
+            setSpeed(movement, player, run, run * (1f + SPEED_GAP));
+        }
+    }
+
+    /** Normal: the game's default running and sprinting speeds. */
+    public static void applyNormalSpeed(MovementManager movement, PlayerRef player) {
+        MovementSettings defaults = defaults(movement);
+        if (defaults != null) {
+            setSpeed(movement, player, defaults.forwardRunSpeedMultiplier, defaults.forwardSprintSpeedMultiplier);
+        }
+    }
+
+    private static MovementSettings defaults(MovementManager movement) {
+        return movement == null ? null : movement.getDefaultSettings();
+    }
+
+    /** Only sends an update to the client if something actually changed. */
+    private static void setSpeed(MovementManager movement, PlayerRef player, float run, float sprint) {
         MovementSettings settings = movement.getSettings();
-        if (settings == null || settings.forwardRunSpeedMultiplier == settings.forwardSprintSpeedMultiplier) {
+        if (settings == null
+                || (settings.forwardRunSpeedMultiplier == run && settings.forwardSprintSpeedMultiplier == sprint)) {
             return;
         }
-        settings.forwardRunSpeedMultiplier = settings.forwardSprintSpeedMultiplier;
+        settings.forwardRunSpeedMultiplier = run;
+        settings.forwardSprintSpeedMultiplier = sprint;
         movement.update(player.getPacketHandler());
     }
 
-    /** Puts running speed back to the game's default. */
-    public static void restoreSpeed(MovementManager movement, PlayerRef player) {
-        if (movement == null) {
-            return;
-        }
-        MovementSettings settings = movement.getSettings();
-        MovementSettings defaults = movement.getDefaultSettings();
-        if (settings == null || defaults == null) {
-            return;
-        }
-        settings.forwardRunSpeedMultiplier = defaults.forwardRunSpeedMultiplier;
-        movement.update(player.getPacketHandler());
-    }
-
-    // ---- Stamina: never goes down while jogging ----
+    // ---- Stamina while jogging: never goes down ----
 
     public static void freezeStamina(EntityStatMap stats) {
         if (stats == null) {
@@ -64,7 +89,7 @@ public final class JogEffects {
         }
     }
 
-    // ---- Stopping: you're winded until the bar refills ----
+    // ---- Stamina after jogging: empty, then a slow refill ----
 
     /** Lets stamina change normally again, then empties it to zero. */
     public static void drainStamina(EntityStatMap stats) {
@@ -76,12 +101,25 @@ public final class JogEffects {
         stats.setStatValue(stamina, 0f);
     }
 
-    /** True once the stamina bar is back to full. */
-    public static boolean isStaminaFull(EntityStatMap stats) {
+    /**
+     * Refills stamina at a steady rate that takes RECOVERY_SECONDS from empty to full,
+     * overriding the game's own (faster) refill. Returns true once the bar is full.
+     */
+    public static boolean recoverStamina(EntityStatMap stats, JogState state, float dt) {
         if (stats == null) {
             return true;
         }
-        EntityStatValue value = stats.get(DefaultEntityStatTypes.getStamina());
-        return value == null || value.get() >= value.getMax();
+        int stamina = DefaultEntityStatTypes.getStamina();
+        EntityStatValue value = stats.get(stamina);
+        if (value == null) {
+            return true;
+        }
+        float max = value.getMax();
+        float recovered = Math.min(max, state.recoveredStamina() + dt * max / RECOVERY_SECONDS);
+        state.setRecoveredStamina(recovered);
+        if (value.get() != recovered) {
+            stats.setStatValue(stamina, recovered);
+        }
+        return recovered >= max;
     }
 }

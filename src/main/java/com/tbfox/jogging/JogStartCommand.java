@@ -46,6 +46,6 @@ public final class JogStartCommand extends AbstractPlayerCommand {
             JogHud.show(playerEntity, player);
         }
         JogEffects.freezeStamina(store.getComponent(ref, EntityStatMap.getComponentType()));
-        JogEffects.applySprintSpeed(store.getComponent(ref, MovementManager.getComponentType()), player);
+        JogEffects.applyJogSpeed(store.getComponent(ref, MovementManager.getComponentType()), player);
     }
 }

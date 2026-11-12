@@ -22,7 +22,8 @@ import java.util.Set;
  * Every tick, for each player:
  * - jogging: keep stamina full and keep running at sprint speed (re-applied each tick so it
  *   survives things that reset you, like respawning);
- * - recovering: once the stamina bar is full again, unlock actions.
+ * - recovering: no sprinting, and stamina refills slowly (JogEffects.RECOVERY_SECONDS);
+ *   once the bar is full again, unlock actions and sprinting.
  */
 public final class JogTickSystem extends EntityTickingSystem<EntityStore> {
     private final JogStates states;
@@ -62,15 +63,18 @@ public final class JogTickSystem extends EntityTickingSystem<EntityStore> {
         }
         JogState state = states.get(player.getUuid());
         EntityStatMap stats = chunk.getComponent(index, EntityStatMap.getComponentType());
+        MovementManager movement = chunk.getComponent(index, MovementManager.getComponentType());
 
         switch (state.mode()) {
             case JOGGING -> {
                 JogEffects.topUpStamina(stats);
-                JogEffects.applySprintSpeed(chunk.getComponent(index, MovementManager.getComponentType()), player);
+                JogEffects.applyJogSpeed(movement, player);
             }
             case RECOVERING -> {
-                if (JogEffects.isStaminaFull(stats)) {
+                JogEffects.applyRecoverySpeed(movement, player);
+                if (JogEffects.recoverStamina(stats, state, dt)) {
                     state.setMode(JogState.Mode.NORMAL);
+                    JogEffects.applyNormalSpeed(movement, player);
                     player.sendMessage(Message.raw("You have recovered from jogging."));
                 }
             }

@@ -45,6 +45,6 @@ public final class JogStopCommand extends AbstractPlayerCommand {
             JogHud.hide(playerEntity, player);
         }
         JogEffects.drainStamina(store.getComponent(ref, EntityStatMap.getComponentType()));
-        JogEffects.restoreSpeed(store.getComponent(ref, MovementManager.getComponentType()), player);
+        JogEffects.applyRecoverySpeed(store.getComponent(ref, MovementManager.getComponentType()), player);
     }
 }

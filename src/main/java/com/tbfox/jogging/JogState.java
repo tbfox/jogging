@@ -13,6 +13,20 @@ public final class JogState {
 
     public synchronized void setMode(Mode mode) {
         this.mode = mode;
+        if (mode == Mode.RECOVERING) {
+            recoveredStamina = 0f;
+        }
+    }
+
+    /** How much stamina has come back so far during recovery. */
+    private float recoveredStamina;
+
+    public synchronized float recoveredStamina() {
+        return recoveredStamina;
+    }
+
+    public synchronized void setRecoveredStamina(float value) {
+        recoveredStamina = value;
     }
 
     /** Actions are locked while jogging and until stamina has refilled afterwards. */
