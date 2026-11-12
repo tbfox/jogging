@@ -1,0 +1,10 @@
+{
+  "$Comment": "Applied by the Jogging mod while you recover after jogging. Stops sprinting until the stamina bar is full.",
+  "Infinite": true,
+  "Debuff": true,
+  "ApplicationEffects": {
+    "MovementEffects": {
+      "DisableSprint": true
+    }
+  }
+}

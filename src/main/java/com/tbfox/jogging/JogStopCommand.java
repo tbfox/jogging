@@ -5,7 +5,6 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
-import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.movement.MovementManager;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -40,11 +39,7 @@ public final class JogStopCommand extends AbstractPlayerCommand {
         state.setMode(JogState.Mode.RECOVERING);
         player.sendMessage(Message.raw("You have stopped jogging."));
 
-        Player playerEntity = store.getComponent(ref, Player.getComponentType());
-        if (playerEntity != null) {
-            JogHud.hide(playerEntity, player);
-        }
         JogEffects.drainStamina(store.getComponent(ref, EntityStatMap.getComponentType()));
-        JogEffects.applyRecoverySpeed(store.getComponent(ref, MovementManager.getComponentType()), player);
+        JogEffects.applyNormalSpeed(store.getComponent(ref, MovementManager.getComponentType()), player);
     }
 }

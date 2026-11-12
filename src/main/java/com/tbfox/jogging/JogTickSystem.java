@@ -9,6 +9,7 @@ import com.hypixel.hytale.component.dependency.SystemDependency;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.entity.effect.EffectControllerComponent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.movement.MovementManager;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
@@ -22,8 +23,8 @@ import java.util.Set;
  * Every tick, for each player:
  * - jogging: keep stamina full and keep running at sprint speed (re-applied each tick so it
  *   survives things that reset you, like respawning);
- * - recovering: no sprinting, and stamina refills slowly (JogEffects.RECOVERY_SECONDS);
- *   once the bar is full again, unlock actions and sprinting.
+ * - recovering: no sprinting (the "winded" effect), and stamina refills slowly
+ *   (JogEffects.RECOVERY_SECONDS); once the bar is full again, unlock actions and sprinting.
  */
 public final class JogTickSystem extends EntityTickingSystem<EntityStore> {
     private final JogStates states;
@@ -71,14 +72,33 @@ public final class JogTickSystem extends EntityTickingSystem<EntityStore> {
                 JogEffects.applyJogSpeed(movement, player);
             }
             case RECOVERING -> {
-                JogEffects.applyRecoverySpeed(movement, player);
                 if (JogEffects.recoverStamina(stats, state, dt)) {
                     state.setMode(JogState.Mode.NORMAL);
-                    JogEffects.applyNormalSpeed(movement, player);
                     player.sendMessage(Message.raw("You have recovered from jogging."));
                 }
             }
             case NORMAL -> { }
+        }
+
+        // Winded (no sprinting) exactly while recovering. Checked every tick so it comes back
+        // after a respawn, and gets cleared if you left mid-recovery and rejoined.
+        JogEffects.setWinded(chunk.getReferenceTo(index),
+                chunk.getComponent(index, EffectControllerComponent.getComponentType()),
+                commandBuffer,
+                state.mode() == JogState.Mode.RECOVERING);
+
+        // HUD label in the corner: "Jogging", "Winded", or nothing. Only sent when it changes.
+        JogHud.Label wanted = switch (state.mode()) {
+            case JOGGING -> JogHud.Label.JOGGING;
+            case RECOVERING -> JogHud.Label.WINDED;
+            case NORMAL -> null;
+        };
+        if (wanted != state.shownLabel()) {
+            Player playerEntity = chunk.getComponent(index, Player.getComponentType());
+            if (playerEntity != null) {
+                JogHud.show(playerEntity, player, wanted);
+                state.setShownLabel(wanted);
+            }
         }
     }
 }

@@ -6,5 +6,5 @@
   "Main": "com.tbfox.jogging.JoggingPlugin",
   "ServerVersion": ">=0.7.7",
   "Dependencies": {},
-  "IncludesAssetPack": false
+  "IncludesAssetPack": true
 }

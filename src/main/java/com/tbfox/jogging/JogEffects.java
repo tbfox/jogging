@@ -1,6 +1,11 @@
 package com.tbfox.jogging;
 
+import com.hypixel.hytale.component.ComponentAccessor;
+import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.protocol.MovementSettings;
+import com.hypixel.hytale.server.core.asset.type.entityeffect.config.EntityEffect;
+import com.hypixel.hytale.server.core.entity.effect.EffectControllerComponent;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.entity.entities.player.movement.MovementManager;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatValue;
@@ -33,15 +38,6 @@ public final class JogEffects {
         }
     }
 
-    /** Recovering: sprinting is barely faster than running, so sprinting does nothing useful. */
-    public static void applyRecoverySpeed(MovementManager movement, PlayerRef player) {
-        MovementSettings defaults = defaults(movement);
-        if (defaults != null) {
-            float run = defaults.forwardRunSpeedMultiplier;
-            setSpeed(movement, player, run, run * (1f + SPEED_GAP));
-        }
-    }
-
     /** Normal: the game's default running and sprinting speeds. */
     public static void applyNormalSpeed(MovementManager movement, PlayerRef player) {
         MovementSettings defaults = defaults(movement);
@@ -64,6 +60,31 @@ public final class JogEffects {
         settings.forwardRunSpeedMultiplier = run;
         settings.forwardSprintSpeedMultiplier = sprint;
         movement.update(player.getPacketHandler());
+    }
+
+    // ---- Winded: no sprinting while recovering ----
+
+    /** Our effect asset (src/main/resources/Server/Entity/Effects/TBFox_Jogging_Winded.json). */
+    private static final String WINDED_EFFECT_ID = "TBFox_Jogging_Winded";
+
+    /**
+     * Adds or removes the "winded" effect, which disables sprinting.
+     * Does nothing if the player already has (or doesn't have) it.
+     */
+    public static void setWinded(Ref<EntityStore> ref, EffectControllerComponent effects,
+                                 ComponentAccessor<EntityStore> accessor, boolean winded) {
+        if (effects == null) {
+            return;
+        }
+        EntityEffect effect = EntityEffect.getAssetMap().getAsset(WINDED_EFFECT_ID);
+        if (effect == null || effects.hasEffect(effect) == winded) {
+            return;
+        }
+        if (winded) {
+            effects.addEffect(ref, effect, accessor);
+        } else {
+            effects.removeEffect(ref, EntityEffect.getAssetMap().getIndex(WINDED_EFFECT_ID), accessor);
+        }
     }
 
     // ---- Stamina while jogging: never goes down ----
