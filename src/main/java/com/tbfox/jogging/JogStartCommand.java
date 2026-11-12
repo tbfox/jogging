@@ -11,10 +11,12 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 /** /jog start */
 public final class JogStartCommand extends AbstractPlayerCommand {
+    private final JogStates states;
 
-    public JogStartCommand() {
+    public JogStartCommand(JogStates states) {
         super("start", "Start jogging.");
         requireNoPermission();
+        this.states = states;
     }
 
     @Override
@@ -25,6 +27,14 @@ public final class JogStartCommand extends AbstractPlayerCommand {
             PlayerRef player,
             World world) {
 
+        JogState state = states.get(player.getUuid());
+        if (state.mode() == JogState.Mode.JOGGING) {
+            player.sendMessage(Message.raw("You are already jogging."));
+            return;
+        }
+
+        // Starting again while recovering skips the rest of the recovery.
+        state.setMode(JogState.Mode.JOGGING);
         player.sendMessage(Message.raw("You have started jogging."));
     }
 }

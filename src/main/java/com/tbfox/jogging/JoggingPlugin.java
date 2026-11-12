@@ -3,6 +3,7 @@ package com.tbfox.jogging;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 
@@ -15,6 +16,8 @@ import java.util.logging.Level;
 public class JoggingPlugin extends JavaPlugin {
     private static final double DEFAULT_RECOVERY_SECONDS = 5;
 
+    private final JogStates states = new JogStates();
+
     public JoggingPlugin(JavaPluginInit init) {
         super(init);
     }
@@ -23,7 +26,9 @@ public class JoggingPlugin extends JavaPlugin {
     protected void setup() {
         double recoverySeconds = readRecoverySeconds();
         getLogger().at(Level.INFO).log("Jogging recovery time: %s seconds", recoverySeconds);
-        getCommandRegistry().registerCommand(new JogCommand(recoverySeconds));
+        getCommandRegistry().registerCommand(new JogCommand(states, recoverySeconds));
+        getEventRegistry().register(PlayerDisconnectEvent.class,
+                event -> states.remove(event.getPlayerRef().getUuid()));
     }
 
     /** Reads "RecoverySeconds" from this mod's own manifest.json, falling back to the default. */

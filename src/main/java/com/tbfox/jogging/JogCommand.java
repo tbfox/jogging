@@ -5,10 +5,10 @@ import com.hypixel.hytale.server.core.command.system.basecommands.AbstractComman
 /** /jog groups the jogging subcommands. On its own it only shows usage. */
 public final class JogCommand extends AbstractCommandCollection {
 
-    public JogCommand(double recoverySeconds) {
+    public JogCommand(JogStates states, double recoverySeconds) {
         super("jog", "Jogging commands.");
         requireNoPermission();
-        addSubCommand(new JogStartCommand());
-        addSubCommand(new JogStopCommand(recoverySeconds));
+        addSubCommand(new JogStartCommand(states));
+        addSubCommand(new JogStopCommand(states, recoverySeconds));
     }
 }
