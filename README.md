@@ -32,70 +32,24 @@ Any player can use these commands. They don't need admin.
 
 ## Installing
 
-### Requirements
+You need a Hytale server on version **0.7.7** or newer.
 
-- Hytale server **0.7.7** or newer. The mod is compiled against 0.7.7's `HytaleServer.jar`.
-- To build from source: a **JDK 25 or newer**, because Hytale's server is built for Java 25, plus **Gradle**.
+1. Put `Jogging-<version>.jar` in your Hytale `UserData/Mods` folder. On macOS that's `~/Library/Application Support/Hytale/UserData/Mods/`.
+2. Turn the mod on for your world, either in the world's settings in-game, or by adding it to `Saves/<World>/config.json`:
 
-### Build and install (macOS)
+   ```json
+   "Mods": {
+     "TBFox:Jogging": { "Enabled": true }
+   }
+   ```
 
-```bash
-./install.sh
-```
+3. Restart the world. Mods load when a world starts, so you don't need to restart the whole game.
 
-This builds `build/libs/Jogging-<version>.jar` and copies it into `~/Library/Application Support/Hytale/UserData/Mods/`.
+## Good to know
 
-`install.sh` uses Homebrew's JDK at `/opt/homebrew/opt/openjdk`. To use a different JDK, set `JAVA_HOME_HYTALE`:
+- **No jog key.** Mods can't add keybinds, so you start and stop jogging with commands.
+- **Brief swing animation.** If you try a locked action, your character may start the animation for a moment before it's cancelled. Nothing actually happens.
+- **Jogging resets when you leave.** If you leave the game or the world restarts, you come back in the normal state, even if you left while winded.
+- **Stopped working after a Hytale update?** The mod may need a new build for the new game version.
 
-```bash
-JAVA_HOME_HYTALE=/path/to/jdk ./install.sh
-```
-
-On other systems, run `gradle build` and copy the jar from `build/libs/` into your Hytale `UserData/Mods` folder. You'll also need to point the `hytaleServerJar` path in `build.gradle` at your install.
-
-### Turn it on in a world
-
-The mod's ID is `TBFox:Jogging`. Enable it in the world's settings in-game, or add it to `Saves/<World>/config.json`:
-
-```json
-"Mods": {
-  "TBFox:Jogging": { "Enabled": true }
-}
-```
-
-Hytale only loads mods when a world starts. After installing a new build, restart the world; you don't need to restart the whole game.
-
-## Tweaking
-
-| What | Where |
-|---|---|
-| Recovery time (seconds from empty to full) | `RECOVERY_SECONDS` in `JogEffects.java` |
-| Jogging speed versus sprint speed | `SPEED_GAP` in `JogEffects.java` |
-| Which actions are locked | `LOCKED` in `ActivityLockSystem.java` |
-| Label text, colours, background, position | `JogHud.java` |
-| What "winded" does to movement | `src/main/resources/Server/Entity/Effects/TBFox_Jogging_Winded.json` |
-
-**Keep `SPEED_GAP` above 0.** Run and sprint speeds must never be exactly equal, or the game client crashes ("value NaN is not finite"). The gap keeps them 2% apart, so jogging is 98% of sprint speed.
-
-## How it works
-
-The code is in `src/main/java/com/tbfox/jogging/`.
-
-| File | Role |
-|---|---|
-| `JoggingPlugin.java` | Entry point. Registers the command, the two systems, and clears a player's state when they disconnect. |
-| `JogCommand.java`, `JogStartCommand.java`, `JogStopCommand.java` | The `/jog` commands. They switch the player's state and apply the immediate changes. |
-| `JogState.java`, `JogStates.java` | Each player's state (normal, jogging, winded), kept in memory. |
-| `JogTickSystem.java` | Runs every tick. Keeps stamina full and speed up while jogging, refills stamina slowly while winded, applies the winded effect, and keeps the corner label in sync. |
-| `ActivityLockSystem.java` | Cancels locked actions as they start, using the same hook as the game's portal "curse". |
-| `JogEffects.java` | The speed, stamina and winded-effect changes. |
-| `JogHud.java` | The JOGGING / WINDED label, built from inline UI markup like the game's own HUD labels. |
-
-The mod ships one asset, `TBFox_Jogging_Winded`, an infinite effect with `DisableSprint` that's on only while you're winded. That's why `manifest.json` has `"IncludesAssetPack": true`.
-
-## Known limitations
-
-- **No dedicated key.** Server mods can't add keybinds, so jogging is toggled with commands.
-- **Brief swing animation.** When an action is locked, the client may start the animation for a moment before the server cancels it. No damage or effect happens.
-- **State isn't saved.** Jogging state is reset when you leave the game or the world restarts. Leaving while winded unlocks you when you come back.
-- **Rebuild after game updates.** The mod is compiled against a specific server version. If a Hytale update breaks it (for example `NoSuchMethodError` in the server log), rebuild against the new `HytaleServer.jar`.
+Building from source, tweaking values, and how the code works are covered in [docs/development.md](docs/development.md).
