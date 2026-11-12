@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Jogging</title>
+  <!-- background -->
+  <rect width="512" height="512" rx="72" fill="#1d3b3a"/>
+
+  <!-- motion lines -->
+  <g stroke="#f5a23a" stroke-width="18" stroke-linecap="square">
+    <line x1="64" y1="176" x2="128" y2="176"/>
+    <line x1="44" y1="238" x2="112" y2="238"/>
+    <line x1="64" y1="340" x2="108" y2="340"/>
+  </g>
+
+  <g fill="none" stroke-linejoin="miter" stroke-linecap="butt">
+    <!-- far arm (swinging forward) -->
+    <polyline points="268,200 322,252 374,222" stroke="#c99a70" stroke-width="36"/>
+    <!-- far leg (kicked back) -->
+    <polyline points="250,300 215,385 140,400" stroke="#2c4470" stroke-width="42"/>
+    <rect x="116" y="370" width="30" height="58" fill="#3a2718" stroke="none" transform="rotate(-11 131 399)"/>
+
+    <!-- torso -->
+    <line x1="275" y1="170" x2="248" y2="308" stroke="#4cc96b" stroke-width="86"/>
+    <!-- belt -->
+    <line x1="252" y1="286" x2="248" y2="308" stroke="#2f8f47" stroke-width="86"/>
+
+    <!-- near leg (striding forward) -->
+    <polyline points="250,300 330,345 318,432" stroke="#3b5b96" stroke-width="42"/>
+    <rect x="294" y="424" width="74" height="30" fill="#5a3b22" stroke="none"/>
+    <!-- near arm (swinging back) -->
+    <polyline points="264,200 194,250 160,300" stroke="#f2c9a0" stroke-width="36"/>
+  </g>
+
+  <!-- head -->
+  <g transform="rotate(8 294 112)">
+    <rect x="242" y="60" width="104" height="104" fill="#f2c9a0"/>
+    <rect x="242" y="60" width="104" height="34" fill="#6b4226"/>
+    <rect x="242" y="60" width="30" height="72" fill="#6b4226"/>
+    <rect x="312" y="108" width="14" height="20" fill="#2a1c12"/>
+  </g>
+</svg>
