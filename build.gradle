@@ -1,0 +1,21 @@
+plugins { id 'java' }
+
+group = 'com.tbfox'
+version = '0.1.0'
+
+def hytaleServerJar = "${System.getProperty('user.home')}/Library/Application Support/Hytale/install/release/package/game/latest/Server/HytaleServer.jar"
+
+dependencies {
+    // Compile against the game's server, but don't bundle it into our jar.
+    compileOnly files(hytaleServerJar)
+}
+
+tasks.withType(JavaCompile).configureEach {
+    // HytaleServer.jar is built for Java 25 (class file version 69).
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+
+jar {
+    archiveBaseName = 'Jogging'
+}

@@ -1,0 +1,10 @@
+{
+  "Group": "TBFox",
+  "Name": "Jogging",
+  "Version": "0.1.0",
+  "Description": "Adds a /jog command.",
+  "Main": "com.tbfox.jogging.JoggingPlugin",
+  "ServerVersion": ">=0.7.7",
+  "Dependencies": {},
+  "IncludesAssetPack": false
+}
